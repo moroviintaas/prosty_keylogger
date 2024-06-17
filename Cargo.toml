@@ -1,0 +1,14 @@
+[package]
+name = "mini_kl"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+windows = {version = "0.57.0", features = [
+    "UI_Core", "Win32_Data", "Win32_Devices", "UI_Input",
+    "UI_Input_Core", "UI_Text_Core", "Win32_UI_Controls",
+    "Win32_UI_Input_KeyboardAndMouse"]}
+chrono = "0.4.38"
+fern = "0.6.2"
+log = "0.4.21"
+clap = "4.5.7"
