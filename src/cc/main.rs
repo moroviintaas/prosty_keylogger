@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use actix_web::{App, get, HttpResponse, HttpServer, post, Responder, web};
 use clap::Parser;
 use log::info;
@@ -9,7 +10,15 @@ mod options;
 
 struct AppState{
     pub config: TaskConfiguration,
+    pub file_path: PathBuf,
     //pub rng: rand::rngs::ThreadRng,
+}
+
+#[get("/client")]
+async fn download_client(data: web::Data<AppState>) -> actix_web::Result<actix_files::NamedFile> {
+    let path = &data.file_path;
+    Ok(actix_files::NamedFile::open(path)?)
+
 }
 
 #[post("/register")]
@@ -68,10 +77,12 @@ async fn main() -> anyhow::Result<()>{
     Ok(HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(AppState{
+                file_path: args.host_file.clone(),
                 config: config.clone(),
             }))
             .service(send_basic_config)
             .service(register_and_send_config)
+            .service(download_client)
     })
         .bind(("0.0.0.0", 8080))?
         .run()

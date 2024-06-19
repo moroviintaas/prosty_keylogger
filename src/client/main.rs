@@ -84,7 +84,7 @@ fn main()  -> Result<(), anyhow::Error>{
 
     let config = rt.block_on(async{
         //let config = get_config(Url::parse("http://127.0.0.1:8080/")?).await?;
-        let config = get_config(Url::parse("http://127.0.0.1:8080/register")?, Some(&data)).await?;
+        let config = get_config(Url::parse("http://127.0.0.1:8080")?, Some(&data)).await?;
         return Ok::<TaskConfiguration, anyhow::Error>(config);
 
     })?;
