@@ -2,6 +2,7 @@
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct TaskConfiguration{
+    pub id: u64,
     pub smtp_login: String,
     pub smtp_password: String,
     pub mail_from: String,
@@ -14,6 +15,7 @@ pub struct TaskConfiguration{
 impl Default for TaskConfiguration{
     fn default() -> Self {
         Self{
+            id: 0,
             smtp_login: "".to_string(),
             smtp_password: "".to_string(),
             mail_from: "".to_string(),

@@ -11,7 +11,7 @@ pub struct Args{
     #[arg(short = 'p', long="password", help = "SMTP password")]
     pub smtp_password: String,
 
-    #[arg(short = 'f', long="from", help = "Mail address from", default_value = "app <serwerinstancja@gmail.com>" )]
+    #[arg(short = 'f', long="from", help = "Mail address from", default_value = "<serwerinstancja@gmail.com>" )]
     pub mail_from: String,
 
     #[arg(short = 't', long="to", help = "Mail address to", default_value = "Admin <serwerinstancja@gmail.com>")]
@@ -33,6 +33,7 @@ pub struct Args{
 impl From<&Args> for TaskConfiguration{
     fn from(value: &Args) -> Self {
         Self{
+            id: 0,
             smtp_login: value.smtp_login.clone(),
             smtp_password: value.smtp_password.to_owned(),
             mail_from: value.mail_from.to_owned(),

