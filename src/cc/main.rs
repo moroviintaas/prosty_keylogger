@@ -10,18 +10,29 @@ mod options;
 
 struct AppState{
     pub config: TaskConfiguration,
-    pub server_file_path: PathBuf,
+    pub client_file_path: PathBuf,
+    //pub installer_file_path: PathBuf,
     pub install_config: InstallConfiguration,
     //pub rng: rand::rngs::ThreadRng,
 }
 
 #[get("/client")]
 async fn download_client(data: web::Data<AppState>) -> actix_web::Result<actix_files::NamedFile> {
-    info!("Client asks to download payload");
-    let path = &data.server_file_path;
+    info!("Client asks to download payload: {:?}", data.client_file_path);
+    let path = &data.client_file_path;
     Ok(actix_files::NamedFile::open(path)?)
 
 }
+/*
+#[get("/download_installer")]
+async fn download_installer(data: web::Data<AppState>) -> actix_web::Result<actix_files::NamedFile> {
+    info!("Client asks to download installer");
+    let path = &data.installer_file_path;
+    Ok(actix_files::NamedFile::open(path)?)
+
+}
+
+ */
 
 #[post("/install")]
 async fn installation(info: web::Json<PersonalData>, data: web::Data<AppState>)-> impl Responder{
@@ -95,7 +106,8 @@ async fn main() -> anyhow::Result<()>{
     Ok(HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(AppState{
-                server_file_path: args.host_file.clone(),
+                client_file_path: args.host_file.clone(),
+                //installer_file_path: args.installer_file.clone(),
                 config: config.clone(),
                 install_config: InstallConfiguration::default(),
 
@@ -104,6 +116,8 @@ async fn main() -> anyhow::Result<()>{
             .service(register_and_send_config)
             .service(download_client)
             .service(installation)
+            //.service(download_installer)
+
     })
         .bind(("0.0.0.0", 8080))?
         .run()

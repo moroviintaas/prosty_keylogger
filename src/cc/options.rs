@@ -30,6 +30,9 @@ pub struct Args{
     #[arg(short = 'H', long = "host-file", help = "Path to hosted payload", default_value = "./client")]
     pub host_file: PathBuf,
 
+    //#[arg(short = 'I', long = "host-file", help = "Path to hosted payload", default_value = "./installer")]
+    //pub installer_file: PathBuf,
+
 
 
 }

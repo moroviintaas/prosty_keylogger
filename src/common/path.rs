@@ -25,14 +25,16 @@ impl PathFragment{
      */
 
     pub fn join_slice(slice: &[PathFragment]) -> Result<PathBuf, anyhow::Error>{
-        let mut ret = String::new();
+        let mut ret = PathBuf::new();
         for s in slice{
             match s{
-                PathFragment::Raw(r) => ret.extend(r.chars()),
+                PathFragment::Raw(r) => {
+                    ret = ret.join(r);
+                }
                 PathFragment::Env(v) => {
-                    let mut x = env::var(v)?.clone();
+                    let x = env::var(v)?.clone();
 
-                    ret.extend(&mut x.chars())
+                    ret = ret.join(x);
                 }
             }
         }
