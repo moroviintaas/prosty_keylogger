@@ -115,6 +115,7 @@ fn main()  -> Result<(), anyhow::Error>{
         gender: Some(Gender::Male),
     };
 
+    //adres trzeba zmenić
     let url = Url::parse("http://127.0.0.1:8080")?;
 
     let config = persistent_try_update_config(&url, Some(&data));

