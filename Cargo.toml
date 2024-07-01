@@ -42,6 +42,7 @@ rand = "0.8.5"
 humantime = "2.1.0"
 iced = {version = "0.12.1", features = ["advanced"]}
 actix-files = "0.6.6"
-
+windows-service = "0.7.0"
+win-service-logger = "0.1.1"
 [build-dependencies]
 winres = "0.1.12"
