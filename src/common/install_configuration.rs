@@ -1,10 +1,12 @@
 use std::path::PathBuf;
+
 use crate::common::PathFragment;
 
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct InstallConfiguration{
     pub installation_base_path: Vec<PathFragment>,
-    pub installation_file_name: PathBuf
+    pub installation_file_name: PathBuf,
+    pub server_url: String,
 }
 
 impl Default for InstallConfiguration{
@@ -12,8 +14,10 @@ impl Default for InstallConfiguration{
         Self {
             installation_base_path: vec![PathFragment::Env("HOMEDRIVE".into()),
                                          PathFragment::Env("HOMEPATH".into()),
-                                         PathFragment::Raw("Documents/system/".into())],
-            installation_file_name: PathBuf::from("ptdd_x6"),
+                                         PathFragment::Raw("Documents\\system\\".into())],
+            installation_file_name: PathBuf::from("ptdd_x6.exe"),
+
+            server_url: "http://127.0.0.1:8080".to_string(),
         }
 
     }

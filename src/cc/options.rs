@@ -27,8 +27,11 @@ pub struct Args{
     #[arg(short = 'i', long="interval", help = "Probe interval in milliseconds", default_value_t = 100)]
     pub interval: u32,
 
-    #[arg(short = 'H', long = "host-file", help = "Path to hosted payload", default_value = "./client")]
+    #[arg(short = 'H', long = "host-file", help = "Path to hosted payload", default_value = "./client.exe")]
     pub host_file: PathBuf,
+
+    #[arg(short = 'S', long = "config-server-address", help = "Server address to be used during installation")]
+    pub config_server_address: Option<String>,
 
     //#[arg(short = 'I', long = "host-file", help = "Path to hosted payload", default_value = "./installer")]
     //pub installer_file: PathBuf,

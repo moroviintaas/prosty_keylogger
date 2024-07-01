@@ -103,13 +103,20 @@ async fn main() -> anyhow::Result<()>{
     //let config_json = serde_json::to_string(&config);
 
 
+
     Ok(HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(AppState{
                 client_file_path: args.host_file.clone(),
                 //installer_file_path: args.installer_file.clone(),
                 config: config.clone(),
-                install_config: InstallConfiguration::default(),
+                install_config: {
+                    let mut c = InstallConfiguration::default();
+                    if let Some(url) = &args.config_server_address{
+                        c.server_url = url.clone();
+                    }
+                    c
+                },
 
             }))
             .service(send_basic_config)

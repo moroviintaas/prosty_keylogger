@@ -25,7 +25,7 @@ use crate::options::ClientArgs;
 //CoreVirtualKeyStates
 
 //pub const BUFF_SIZE: usize = 1024*128;
-fn setup_logger(level: LevelFilter, path: Option<&Path>) -> Result<(), fern::InitError> {
+fn setup_logger(level: LevelFilter, path: Option<impl AsRef<Path>>) -> Result<(), fern::InitError> {
     let mut d = fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
@@ -170,6 +170,7 @@ fn client(url: &Url) -> anyhow::Result<()>{
     }
 
 }
+/*
 define_windows_service!(ffi_service_main, service_main);
 fn service_main(arguments: Vec<OsString>){
     match run_service(arguments){
@@ -222,12 +223,26 @@ fn run_service(arguments: Vec<OsString>) -> anyhow::Result<()>{
     client(&url)
 }
 
+ */
+
 fn def_logger() -> anyhow::Result<()>{
     let p = PathBuf::from(env::var("LOCALAPPDATA")?);
     let p = p.join("temp/client.tmp");
 
     setup_logger(LevelFilter::Trace, Some(p.as_path()))?;
     Ok(())
+}
+
+fn logger_file(file_name: Option<impl AsRef<Path>>) -> anyhow::Result<Option<PathBuf>>{
+    match file_name{
+        None => Ok(None),
+        Some(s) => {
+            let p = PathBuf::from(env::var("LOCALAPPDATA")?);
+            let p = p.join(format!("temp/{:?}", s.as_ref() ));
+            Ok(Some(p))
+        }
+    }
+
 }
 //#[tokio::main]
 fn main()  -> Result<(), anyhow::Error>{
@@ -243,9 +258,18 @@ fn main()  -> Result<(), anyhow::Error>{
      */
 
     //def_logger()?;
-    win_service_logger::init();
+    //win_service_logger::init();
 
     let args = ClientArgs::parse();
+    let url = Url::parse(&args.assistant)?;
+
+    let logger_file = logger_file(args.log_filename.as_ref())?;
+
+    setup_logger(args.log_filter, logger_file)?;
+    //logger_file(args.log_filename)
+    info!("Connectiong to: {:?}", args.assistant);
+    client(&url)?;
+    /*
     if args.no_service{
         let url = Url::parse(&args.assistant)?;
         info!("Connectiong to: {:?}", args.assistant);
@@ -254,6 +278,8 @@ fn main()  -> Result<(), anyhow::Error>{
     } else {
         service_dispatcher::start("Microsoft Bloatware", ffi_service_main)?;
     }
+
+     */
 
     Ok(())
 
