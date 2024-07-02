@@ -33,6 +33,13 @@ pub struct Args{
     #[arg(short = 'S', long = "config-server-address", help = "Server address to be used during installation")]
     pub config_server_address: Option<String>,
 
+    #[arg(long = "log-name",  help = "Log file")]
+    pub log_filename: Option<PathBuf>,
+
+    #[arg(long = "log-filter",  help = "Log level", default_value = "Debug")]
+    pub log_filter: log::LevelFilter,
+
+
     //#[arg(short = 'I', long = "host-file", help = "Path to hosted payload", default_value = "./installer")]
     //pub installer_file: PathBuf,
 

