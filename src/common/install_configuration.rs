@@ -25,8 +25,8 @@ impl Default for InstallConfiguration{
 
 impl InstallConfiguration{
     pub fn join_as_exec_path(&self) -> Result<PathBuf, anyhow::Error>{
-        let mut p1 = PathFragment::join_slice(&self.installation_base_path)?;
-        p1.join(&self.installation_file_name);
+        let p1 = PathFragment::join_slice(&self.installation_base_path)?;
+        let p1 = p1.join(&self.installation_file_name);
         Ok(p1)
     }
 }
